@@ -1,38 +1,40 @@
 server:
   port: 8090
- 
+
 file:
   upload-dir: src/main/resources/static/uploads
- 
+
 spring:
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
   datasource:
-    url: jdbc:mysql://turntable.proxy.rlwy.net:34073/railway?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: CAUEFDCtOTyedwgjKZHmcJbnofBXMjND
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
- 
+
 jwt:
-  secret: 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+  secret: ${JWT_SECRET}
   expiration: 86400000
   token-prefix: Bearer
   header: Authorization
- 
+
 logging:
   level:
     com.ghr360: DEBUG
     org.springframework.security: DEBUG
- 
+
 cloudinary:
-  cloud-name: deqzrwlvu
-  api-key: 873435671119687
-  api-secret: vdnUqJitjNdU8mZUPBR_7GwWVR0
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
   folder: ghr360
