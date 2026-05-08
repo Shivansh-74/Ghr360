@@ -1,0 +1,55 @@
+package com.ghr360.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "DEALER_PROPERTIES")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class DealerProperty {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private Long id;
+
+    @Column(name = "TYPE", length = 10)
+    private String type;          // RENT / SALE
+
+    @Column(name = "OWNER_NAME", length = 100)
+    private String ownerName;
+
+    @Column(name = "OWNER_CONTACT", length = 20)
+    private String ownerContact;
+
+    @Column(name = "LOCALITY", length = 150)
+    private String locality;
+
+    @Column(name = "ADDRESS", length = 255)
+    private String address;
+
+    @Column(name = "CITY", length = 100)
+    private String city;
+
+    @Column(name = "STATE", length = 100)
+    private String state;
+
+    @Column(name = "LAT")
+    private Double lat;
+
+    @Column(name = "LONGITUDE")
+    private Double longitude;
+
+    @Column(name = "PRICE", precision = 15, scale = 2)
+    private BigDecimal price;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DEALER_CODE", referencedColumnName = "USERNAME")
+    private User dealer;
+}
