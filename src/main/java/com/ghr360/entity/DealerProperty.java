@@ -48,7 +48,13 @@ public class DealerProperty {
 
     @Column(name = "PRICE", precision = 15, scale = 2)
     private BigDecimal price;
-    
+
+    @Column(name = "THUMBNAIL_URL", length = 500)
+    private String thumbnailUrl;
+
+    @Column(name = "THUMBNAIL_PUBLIC_ID", length = 300)
+    private String thumbnailPublicId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DEALER_CODE", referencedColumnName = "USERNAME")
     private User dealer;

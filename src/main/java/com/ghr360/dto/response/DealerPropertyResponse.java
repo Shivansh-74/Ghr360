@@ -25,4 +25,5 @@ public class DealerPropertyResponse {
     private Double longitude;
     private BigDecimal price;
     private String dealerCode;   // username of the dealer
+    private String thumbnailUrl; // Cloudinary thumbnail image URL
 }

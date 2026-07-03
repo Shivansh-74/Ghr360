@@ -8,10 +8,10 @@ import com.ghr360.dto.response.DashboardResponseDto;
 import com.ghr360.dto.response.DealerPropertyResponse;
 import com.ghr360.entity.DealerProperty;
 import com.ghr360.entity.User;
+import com.ghr360.exception.MediaUploadException;
 import com.ghr360.exception.ResourceNotFoundException;
 import com.ghr360.repository.DealerPropertyRepository;
 import com.ghr360.repository.UserRepository;
-import com.ghr360.service.DealerPropertyService;
 import com.ghr360.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +20,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,22 +34,30 @@ public class DealerPropertyService {
     private final DealerPropertyRepository dealerPropertyRepository;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final CloudinaryService cloudinaryService;
 
     // ─── Register Property ───────────────────────────────────────────────────────
 
     @Transactional
-    public DealerPropertyResponse registerProperty(DealerPropertyRequest request, String jwtToken) {
+    public DealerPropertyResponse registerProperty(DealerPropertyRequest request,
+                                                    MultipartFile thumbnail,
+                                                    String jwtToken) {
 
         // JWT se username nikalo
         String username = extractUsername(jwtToken);
         log.info("Registering property for dealer: {}", username);
 
+        // Thumbnail mandatory validation
+        if (thumbnail == null || thumbnail.isEmpty()) {
+            throw new MediaUploadException("Thumbnail image is required");
+        }
+
         // User fetch karo DB se
         User dealer = userRepository.findByUsername(request.getDealer())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Dealer not found: " + username));
+                        "Dealer not found: " + request.getDealer()));
 
-        // Entity banao
+        // First save the property (without thumbnail) to get an ID for the Cloudinary folder
         DealerProperty property = DealerProperty.builder()
                 .type(request.getType())
                 .ownerName(request.getOwnerName())
@@ -63,7 +73,15 @@ public class DealerPropertyService {
                 .build();
 
         DealerProperty saved = dealerPropertyRepository.save(property);
-        log.info("Property registered with id: {} for dealer: {}", saved.getId(), username);
+
+        // Upload thumbnail to Cloudinary under ghr360/{dealerUsername}/{propertyId}/
+        Map<String, String> uploaded = cloudinaryService.upload(thumbnail, dealer.getUsername(), saved.getId());
+        saved.setThumbnailUrl(uploaded.get("url"));
+        saved.setThumbnailPublicId(uploaded.get("public_id"));
+        saved = dealerPropertyRepository.save(saved);
+
+        log.info("Property registered with id: {} for dealer: {}, thumbnailUrl: {}",
+                saved.getId(), username, saved.getThumbnailUrl());
 
         return mapToResponse(saved);
     }
@@ -81,7 +99,7 @@ public class DealerPropertyService {
         } else {
             log.info("Admin mode: fetching ALL properties with filters");
         }
-
+       // System.out.println(usernameFilter);
         Specification<DealerProperty> spec =
                 DealerPropertySpecification.filterBy(usernameFilter, filter);
 
@@ -119,6 +137,7 @@ public class DealerPropertyService {
                 .longitude(property.getLongitude())
                 .price(property.getPrice())
                 .dealerCode(property.getDealer().getUsername())
+                .thumbnailUrl(property.getThumbnailUrl())
                 .build();
     }
     
@@ -140,6 +159,7 @@ public class DealerPropertyService {
             d.setCity(p.getCity());
             d.setPrice(p.getPrice());
             d.setDealerCode(p.getDealer().getFirstname());
+            d.setThumbnailUrl(p.getThumbnailUrl());
             return d;
         }).toList();
 
