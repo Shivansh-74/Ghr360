@@ -26,4 +26,10 @@ public class DealerPropertyResponse {
     private BigDecimal price;
     private String dealerCode;   // username of the dealer
     private String thumbnailUrl; // Cloudinary thumbnail image URL
+    private Double squareFeet;
+    private Double bedrooms;
+    private Double bathrooms;
+    private Double parkings;
+
+
 }
