@@ -19,4 +19,5 @@ public class DealerPropertyFilterRequest {
     private LocalDate endDate;         // optional
     private String isAdmin;
     private Long propertyId;
+    private String status;         // optional — filter by status (admin use)
 }

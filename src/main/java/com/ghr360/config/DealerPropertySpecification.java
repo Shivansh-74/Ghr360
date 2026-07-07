@@ -26,6 +26,8 @@ public class DealerPropertySpecification {
             // ── DEALER filter: only when not admin ────────────────────────────
             if (username != null) {
                 predicates.add(cb.equal(root.get("dealer").get("username"), username));
+                // Non-admin (mobile/dealer) only sees OPEN properties
+                predicates.add(cb.equal(cb.upper(root.get("status")), "OPEN"));
             }
 
             // ── OPTIONAL filters ─────────────────────────────────────────────
@@ -71,6 +73,13 @@ public class DealerPropertySpecification {
 
             if (filter.getMaxPrice() != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("price"), filter.getMaxPrice()));
+            }
+
+            // Admin can filter by status explicitly
+            if (filter.getStatus() != null && !filter.getStatus().isBlank()) {
+                predicates.add(cb.equal(
+                        cb.upper(root.get("status")),
+                        filter.getStatus().toUpperCase()));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

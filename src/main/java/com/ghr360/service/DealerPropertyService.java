@@ -11,6 +11,7 @@ import com.ghr360.entity.User;
 import com.ghr360.exception.MediaUploadException;
 import com.ghr360.exception.ResourceNotFoundException;
 import com.ghr360.repository.DealerPropertyRepository;
+import com.ghr360.repository.PropertyMediaRepository;
 import com.ghr360.repository.UserRepository;
 import com.ghr360.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class DealerPropertyService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final CloudinaryService cloudinaryService;
+    private final PropertyMediaRepository propertyMediaRepository;
 
     // ─── Register Property ───────────────────────────────────────────────────────
 
@@ -69,6 +71,11 @@ public class DealerPropertyService {
                 .lat(request.getLat())
                 .longitude(request.getLongitude())
                 .price(request.getPrice())
+                .squareFeet(request.getSquareFeet())
+                .bedrooms(request.getBedrooms())
+                .bathrooms(request.getBathrooms())
+                .parkings(request.getParkings())
+                .status("OPEN")
                 .dealer(dealer)
                 .build();
 
@@ -138,9 +145,68 @@ public class DealerPropertyService {
                 .price(property.getPrice())
                 .dealerCode(property.getDealer().getUsername())
                 .thumbnailUrl(property.getThumbnailUrl())
+                .squareFeet(property.getSquareFeet())
+                .bedrooms(property.getBedrooms())
+                .bathrooms(property.getBathrooms())
+                .parkings(property.getParkings())
+                .status(property.getStatus())
                 .build();
     }
     
+    // ─── Update Property Status ──────────────────────────────────────────────────
+
+    private static final List<String> VALID_STATUSES = List.of("OPEN", "SOLD", "FULFILLED");
+
+    @Transactional
+    public DealerPropertyResponse updateStatus(Long id, String status) {
+        String normalized = status != null ? status.toUpperCase().trim() : "";
+        if (!VALID_STATUSES.contains(normalized)) {
+            throw new IllegalArgumentException(
+                    "Invalid status '" + status + "'. Allowed values: OPEN, SOLD, FULFILLED");
+        }
+
+        DealerProperty property = dealerPropertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found: " + id));
+
+        property.setStatus(normalized);
+        DealerProperty saved = dealerPropertyRepository.save(property);
+        log.info("Property {} status changed to {}", id, normalized);
+        return mapToResponse(saved);
+    }
+
+    // ─── Delete Property ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public void deleteProperty(Long id) {
+        DealerProperty property = dealerPropertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found: " + id));
+
+        // Delete all associated media files from Cloudinary
+        propertyMediaRepository.findByPropertyId(id).forEach(media -> {
+            String resourceType = "video".equals(
+                    media.getMediaType() != null ? media.getMediaType().name().toLowerCase() : "")
+                    ? "video" : "image";
+            try {
+                cloudinaryService.delete(media.getPublicId(), resourceType);
+            } catch (Exception ex) {
+                log.warn("Could not delete media {} from Cloudinary: {}", media.getPublicId(), ex.getMessage());
+            }
+        });
+        propertyMediaRepository.deleteByPropertyId(id);
+
+        // Delete thumbnail from Cloudinary
+        if (property.getThumbnailPublicId() != null && !property.getThumbnailPublicId().isBlank()) {
+            try {
+                cloudinaryService.delete(property.getThumbnailPublicId(), "image");
+            } catch (Exception ex) {
+                log.warn("Could not delete thumbnail {} from Cloudinary: {}", property.getThumbnailPublicId(), ex.getMessage());
+            }
+        }
+
+        dealerPropertyRepository.delete(property);
+        log.info("Property {} deleted successfully", id);
+    }
+
     public DashboardResponseDto getDashboardData() {
         DashboardResponseDto dto = new DashboardResponseDto();
 

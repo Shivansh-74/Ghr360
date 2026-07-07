@@ -18,4 +18,8 @@ public class DealerPropertyRequest {
     private Double lat;
     private Double longitude;
     private BigDecimal price;
+    private Double squareFeet;
+    private Double bedrooms;
+    private Double bathrooms;
+    private Double parkings;
 }

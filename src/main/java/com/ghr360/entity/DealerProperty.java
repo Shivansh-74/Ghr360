@@ -55,6 +55,21 @@ public class DealerProperty {
     @Column(name = "THUMBNAIL_PUBLIC_ID", length = 300)
     private String thumbnailPublicId;
 
+    @Column(name = "SQUARE_FEET")
+    private Double squareFeet;
+
+    @Column(name = "BEDROOMS")
+    private Double bedrooms;
+
+    @Column(name = "BATHROOMS")
+    private Double bathrooms;
+
+    @Column(name = "PARKINGS")
+    private Double parkings;
+
+    @Column(name = "STATUS", length = 20, nullable = false)
+    private String status = "OPEN";   // OPEN / SOLD / FULFILLED
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DEALER_CODE", referencedColumnName = "USERNAME")
     private User dealer;

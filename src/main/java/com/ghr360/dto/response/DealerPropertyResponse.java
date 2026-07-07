@@ -30,6 +30,5 @@ public class DealerPropertyResponse {
     private Double bedrooms;
     private Double bathrooms;
     private Double parkings;
-
-
+    private String status;  // OPEN / SOLD / FULFILLED
 }

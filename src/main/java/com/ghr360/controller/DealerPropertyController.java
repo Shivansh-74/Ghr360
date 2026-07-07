@@ -44,6 +44,10 @@ public class DealerPropertyController {
             @RequestParam(value = "lat",          required = false) Double lat,
             @RequestParam(value = "longitude",    required = false) Double longitude,
             @RequestParam("price")                      BigDecimal price,
+            @RequestParam(value = "squareFeet",   required = false) Double squareFeet,
+            @RequestParam(value = "bedrooms",     required = false) Double bedrooms,
+            @RequestParam(value = "bathrooms",    required = false) Double bathrooms,
+            @RequestParam(value = "parkings",     required = false) Double parkings,
             @RequestParam("thumbnail")                  MultipartFile thumbnail) {
 
         DealerPropertyRequest request = new DealerPropertyRequest();
@@ -58,6 +62,10 @@ public class DealerPropertyController {
         request.setLat(lat);
         request.setLongitude(longitude);
         request.setPrice(price);
+        request.setSquareFeet(squareFeet);
+        request.setBedrooms(bedrooms);
+        request.setBathrooms(bathrooms);
+        request.setParkings(parkings);
 
         DealerPropertyResponse response =
                 dealerPropertyService.registerProperty(request, thumbnail, authorizationHeader);
@@ -100,5 +108,32 @@ public class DealerPropertyController {
         return ResponseEntity.ok(
                 ApiResponse.success("success", data)
         );
+    }
+
+    /**
+     * PATCH /api/properties/{id}/status
+     * Change property status: OPEN | SOLD | FULFILLED
+     * SOLD and FULFILLED are excluded from the mobile /my feed.
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<DealerPropertyResponse>> updateStatus(
+            @PathVariable Long id,
+            @RequestParam("status") String status) {
+
+        DealerPropertyResponse response = dealerPropertyService.updateStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Status updated to " + response.getStatus(), response));
+    }
+
+    /**
+     * DELETE /api/properties/{id}
+     * Admin deletes a property. Also removes thumbnail from Cloudinary.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteProperty(
+            @PathVariable Long id) {
+
+        dealerPropertyService.deleteProperty(id);
+        return ResponseEntity.ok(ApiResponse.success("Property deleted successfully"));
     }
 }
